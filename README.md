@@ -28,8 +28,8 @@ If your genome annotation pipeline appends suffixes (e.g., `-PA`, `_t1`) to tran
 You can install the development version of LINGUINE from GitHub using `devtools`:
 
 ```r
-# install.packages("devtools")
-devtools::install_github("MetazoaPhylogenomicsLab/Vargas-Chavez_-_Fernandez_2026_LINGUINE")
+# install.packages("pak")
+pak::pak("MetazoaPhylogenomicsLab/Vargas-Chavez-Fernandez_2026_LINGUINE")
 ```
 
 ## 🚀 Quick Start & Configuration
