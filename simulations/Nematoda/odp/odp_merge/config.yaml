@@ -1,0 +1,9 @@
+# Merge the odp files depending on their
+rbh_files:
+  - Nematoda/odp/odp_nway_rbh/odp_nway_rbh/step3-unwrap/CELE_OTIP_PEXS.filt.unwrapped.rbh
+  - Nematoda/odp/odp_nway_rbh/odp_nway_rbh/step3-unwrap/CELE_OTIP_SRAT.filt.unwrapped.rbh
+  - Nematoda/odp/odp_nway_rbh/odp_nway_rbh/step3-unwrap/CELE_PEXS_SRAT.filt.unwrapped.rbh
+
+# set up the anchor species that will be used for merging
+anchor_species:
+  - CELE

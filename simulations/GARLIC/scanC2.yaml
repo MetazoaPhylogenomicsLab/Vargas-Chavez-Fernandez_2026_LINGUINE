@@ -1,0 +1,22 @@
+seed: 12345
+output_directory: 'sim_output_5_species'
+
+# --- Ancestral Genome Parameters ---
+num_ancestral_ogs: 5000
+num_chromosomes: 15
+geom_prob: 0.9 # 0.9 = mostly single-copy, 0.5 = highly duplicated
+same_chr_prob: 0.70 # 60% chance paralogs stay on the parent chromosome
+min_chr_size: 100000
+max_chr_size: 500000
+min_gene_size: 500
+max_gene_size: 2000
+
+# The Newick tree. 
+tree_string: '((SpeciesA,SpeciesB)Node_AB,SpeciesC)Root;'
+
+BranchEvents:
+  SpeciesA:
+    - Type: fission
+      Value: 5
+    - Type: fusion
+      Value: 5

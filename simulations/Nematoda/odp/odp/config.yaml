@@ -1,0 +1,86 @@
+#
+# author: dts
+# 
+# This is an example config file for odp/scripts/odp
+#
+# # To use this software first copy this config file to your analysis directory
+# cp odp/example_configs/CONFIG_odp.yaml ./config.yaml
+# # Then modify the config file to include your own data
+# vim config.yaml
+# # Then run the pipeline
+# snakemake -r -p --snakefile odp/scripts/odp
+
+
+ignore_autobreaks: True       # Skip steps to find breaks in synteny blocks
+diamond_or_blastp: "diamond"  # "diamond" or "blastp"
+duplicate_proteins: "pass"    # currently only "fail" or "best". Fail doesn't allow duplicate names or seqs
+plot_LGs: True                # Plot the ALGs based on the installed databases
+plot_sp_sp: True              # Plot the synteny between two species, if False just generates .rbh files
+
+species:
+  CELE:
+    proteins: Nematoda/odp/CELE.faa
+    chrom: Nematoda/odp/CELE.chrom
+    genome: Nematoda/odp/CELE.fna
+    minscafsize: 4500000
+  OVOL:
+    proteins: Nematoda/odp/OVOL.faa
+    chrom: Nematoda/odp/OVOL.chrom
+    genome: Nematoda/odp/OVOL.fna
+    minscafsize: 4500000
+  PEXS:
+    proteins: Nematoda/odp/PEXS.faa
+    chrom: Nematoda/odp/PEXS.chrom
+    genome: Nematoda/odp/PEXS.fna
+    minscafsize: 4500000
+  SRAT:
+    proteins: Nematoda/odp/SRAT.faa
+    chrom: Nematoda/odp/SRAT.chrom
+    genome: Nematoda/odp/SRAT.fna
+    minscafsize: 4500000
+  BOKI:
+    proteins: Nematoda/odp/BOKI.faa
+    chrom: Nematoda/odp/BOKI.chrom
+    genome: Nematoda/odp/BOKI.fna
+    minscafsize: 4500000
+  PRPA:
+    proteins: Nematoda/odp/PRPA.faa
+    chrom: Nematoda/odp/PRPA.chrom
+    genome: Nematoda/odp/PRPA.fna
+    minscafsize: 4500000
+  CINO:
+    proteins: Nematoda/odp/CINO.faa
+    chrom: Nematoda/odp/CINO.chrom
+    genome: Nematoda/odp/CINO.fna
+    minscafsize: 4500000
+  CREM:
+    proteins: Nematoda/odp/CREM.faa
+    chrom: Nematoda/odp/CREM.chrom
+    genome: Nematoda/odp/CREM.fna
+    minscafsize: 4500000
+  CNIO:
+    proteins: Nematoda/odp/CNIO.faa
+    chrom: Nematoda/odp/CNIO.chrom
+    genome: Nematoda/odp/CNIO.fna
+    minscafsize: 4500000
+  CBRI:
+    proteins: Nematoda/odp/CBRI.faa
+    chrom: Nematoda/odp/CBRI.chrom
+    genome: Nematoda/odp/CBRI.fna
+    minscafsize: 4500000
+  OTIP:
+    proteins: Nematoda/odp/OTIP.faa
+    chrom: Nematoda/odp/OTIP.chrom
+    genome: Nematoda/odp/OTIP.fna
+    minscafsize: 4500000
+  HCON:
+    proteins: Nematoda/odp/HCON.faa
+    chrom: Nematoda/odp/HCON.chrom
+    genome: Nematoda/odp/HCON.fna
+    minscafsize: 4500000
+  BMAL:
+    proteins: Nematoda/odp/BMAL.faa
+    chrom: Nematoda/odp/BMAL.chrom
+    genome: Nematoda/odp/BMAL.fna
+    minscafsize: 4500000
+

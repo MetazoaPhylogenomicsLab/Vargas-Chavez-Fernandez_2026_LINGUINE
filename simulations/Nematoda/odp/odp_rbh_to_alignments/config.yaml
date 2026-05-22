@@ -1,0 +1,94 @@
+#
+# author: dts
+# github: @conchoecia
+# repository: @conchoecia/odp
+#   date: 2022
+#
+# This is the example config file for odp_rbh_to_alignments
+#
+# The goal of this program is to create protein alignments of the
+#  orthologs, and to set up a database to use for the rest of odp.
+#
+# The .rbh file should contain the `group` and the `color` columns for
+#  each of the rows. This creates groups and colors for each inferred ALG.
+#
+# The .rbh file you should use for this is most likely the output of
+#  the program odp_nway_rbh, and the file
+#  odp_nway_rbh/step3-unwrap/{analysis}.filt.unwrapped.rbh
+#
+# The rbh file mentioned above ^ will contain only the significantly large
+#  ALGs that are annotated with an abstract group name and color
+
+rbh_file: Nematoda/odp/odp_merge/odp_rbh_merge/output/CELE.mer 
+duplicate_proteins: "pass"    # currently only "fail" or "best". Fail doesn't allow duplicate names or seqs
+
+
+# Every species that is in the rbh file should also be specified
+#  below in the `species` section.
+species:
+  CELE:
+    proteins: Nematoda/odp/CELE.faa
+    chrom: Nematoda/odp/CELE.chrom
+    genome: Nematoda/odp/CELE.fna
+    minscafsize: 4500000
+  OVOL:
+    proteins: Nematoda/odp/OVOL.faa
+    chrom: Nematoda/odp/OVOL.chrom
+    genome: Nematoda/odp/OVOL.fna
+    minscafsize: 4500000
+  PEXS:
+    proteins: Nematoda/odp/PEXS.faa
+    chrom: Nematoda/odp/PEXS.chrom
+    genome: Nematoda/odp/PEXS.fna
+    minscafsize: 4500000
+  SRAT:
+    proteins: Nematoda/odp/SRAT.faa
+    chrom: Nematoda/odp/SRAT.chrom
+    genome: Nematoda/odp/SRAT.fna
+    minscafsize: 4500000
+  BOKI:
+    proteins: Nematoda/odp/BOKI.faa
+    chrom: Nematoda/odp/BOKI.chrom
+    genome: Nematoda/odp/BOKI.fna
+    minscafsize: 4500000
+  PRPA:
+    proteins: Nematoda/odp/PRPA.faa
+    chrom: Nematoda/odp/PRPA.chrom
+    genome: Nematoda/odp/PRPA.fna
+    minscafsize: 4500000
+  CINO:
+    proteins: Nematoda/odp/CINO.faa
+    chrom: Nematoda/odp/CINO.chrom
+    genome: Nematoda/odp/CINO.fna
+    minscafsize: 4500000
+  CREM:
+    proteins: Nematoda/odp/CREM.faa
+    chrom: Nematoda/odp/CREM.chrom
+    genome: Nematoda/odp/CREM.fna
+    minscafsize: 4500000
+  CNIO:
+    proteins: Nematoda/odp/CNIO.faa
+    chrom: Nematoda/odp/CNIO.chrom
+    genome: Nematoda/odp/CNIO.fna
+    minscafsize: 4500000
+  CBRI:
+    proteins: Nematoda/odp/CBRI.faa
+    chrom: Nematoda/odp/CBRI.chrom
+    genome: Nematoda/odp/CBRI.fna
+    minscafsize: 4500000
+  OTIP:
+    proteins: Nematoda/odp/OTIP.faa
+    chrom: Nematoda/odp/OTIP.chrom
+    genome: Nematoda/odp/OTIP.fna
+    minscafsize: 4500000
+  HCON:
+    proteins: Nematoda/odp/HCON.faa
+    chrom: Nematoda/odp/HCON.chrom
+    genome: Nematoda/odp/HCON.fna
+    minscafsize: 4500000
+  BMAL:
+    proteins: Nematoda/odp/BMAL.faa
+    chrom: Nematoda/odp/BMAL.chrom
+    genome: Nematoda/odp/BMAL.fna
+    minscafsize: 4500000
+

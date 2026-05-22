@@ -1,0 +1,9 @@
+# Merge the odp files depending on their
+rbh_files:
+  - Annelida/odp/odp_nway_rbh/odp_nway_rbh/step3-unwrap/EAND_HMAN_MVUL.filt.unwrapped.rbh
+  - Annelida/odp/odp_nway_rbh/odp_nway_rbh/step3-unwrap/BLOB_EAND_MVUL.filt.unwrapped.rbh
+  - Annelida/odp/odp_nway_rbh/odp_nway_rbh/step3-unwrap/BLOB_EAND_HMAN.filt.unwrapped.rbh
+
+# set up the anchor species that will be used for merging
+anchor_species:
+  - EAND

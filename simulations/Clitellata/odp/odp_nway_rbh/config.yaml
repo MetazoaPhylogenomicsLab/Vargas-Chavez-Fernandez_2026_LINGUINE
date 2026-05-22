@@ -1,0 +1,55 @@
+#
+# author: dts
+# github: @conchoecia
+# repository: @conchoecia/odp
+#   date: 2022
+#
+# This is the example config file for odp_nway_rbh
+#  - it is basically the sample config file as for odp
+#
+# For each run you can only pick n-way comparisons.
+# In this example file, we can only specify 3-species
+#  comparisons because we specified the option nways: 3
+# You can pick as many species as you want as long as n >= 2
+#
+# The field num_permutations is the number of times the genomes
+#  are shuffled to calculate the false discovery rate. Keep it to at least
+#  1000000 permutations, but it is likely that doing many more than that
+#  isn't useful.
+#
+
+nways: 3                 # This number should be the number of species that will be in each combination. Should match the number in analyses below.
+search_method: "diamond" # this must be diamond or blastp
+duplicate_proteins: "pass"    # currently only "fail" or "pass". Fail doesn't allow duplicate names or seqs
+# These are all of the analyses that you would like to perform.
+#  The things in quotes here are the 4-way comparisons that you would like to perform
+#  We require these to be explicitely specified in this program because of the higher compute
+#   time of each analysis. 
+analyses:
+  - ["EAND", "MVUL", "BLOB"]
+  - ["EAND", "MVUL", "HMAN"]
+  - ["EAND", "BLOB", "HMAN"]
+  
+num_permutations: 1000000
+
+species:
+  EAND:
+    proteins: Annelida/odp/EAND.faa
+    chrom: Annelida/odp/EAND.chrom
+    genome: Annelida/odp/EAND.fna
+    minscafsize: 10000000
+  MVUL:
+    proteins: Annelida/odp/MVUL.faa
+    chrom: Annelida/odp/MVUL.chrom
+    genome: Annelida/odp/MVUL.fna
+    minscafsize: 10000000
+  BLOB:
+    proteins: Annelida/odp/BLOB.faa
+    chrom: Annelida/odp/BLOB.chrom
+    genome: Annelida/odp/BLOB.fna
+    minscafsize: 10000000
+  HMAN:
+    proteins: Annelida/odp/HMAN.faa
+    chrom: Annelida/odp/HMAN.chrom
+    genome: Annelida/odp/HMAN.fna
+    minscafsize: 10000000

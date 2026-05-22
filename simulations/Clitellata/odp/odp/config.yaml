@@ -1,0 +1,58 @@
+# 
+# This is an example config file for odp/scripts/odp
+#
+# # To use this software first copy this config file to your analysis directory
+# cp odp/example_configs/CONFIG_odp.yaml ./config.yaml
+# # Then modify the config file to include your own data
+# vim config.yaml
+# # Then run the pipeline
+# snakemake -r -p --snakefile odp/scripts/odp
+
+
+ignore_autobreaks: True       # Skip steps to find breaks in synteny blocks
+diamond_or_blastp: "diamond"  # "diamond" or "blastp"
+duplicate_proteins: "pass"    # currently only "fail" or "best". Fail doesn't allow duplicate names or seqs
+plot_LGs: True                # Plot the ALGs based on the installed databases
+plot_sp_sp: True              # Plot the synteny between two species, if False just generates .rbh files
+
+species:
+  EAND:
+    proteins: Annelida/odp/EAND.faa
+    chrom: Annelida/odp/EAND.chrom
+    genome: Annelida/odp/EAND.fna
+    minscafsize: 10000000
+  MVUL:
+    proteins: Annelida/odp/MVUL.faa
+    chrom: Annelida/odp/MVUL.chrom
+    genome: Annelida/odp/MVUL.fna
+    minscafsize: 10000000
+  BLOB:
+    proteins: Annelida/odp/BLOB.faa
+    chrom: Annelida/odp/BLOB.chrom
+    genome: Annelida/odp/BLOB.fna
+    minscafsize: 10000000
+  HMAN:
+    proteins: Annelida/odp/HMAN.faa
+    chrom: Annelida/odp/HMAN.chrom
+    genome: Annelida/odp/HMAN.fna
+    minscafsize: 10000000
+  DELA:
+    proteins: Annelida/odp/DELA.faa
+    chrom: Annelida/odp/DELA.chrom
+    genome: Annelida/odp/DELA.fna
+    minscafsize: 10000000
+  NNAJ:
+    proteins: Annelida/odp/NNAJ.faa
+    chrom: Annelida/odp/NNAJ.chrom
+    genome: Annelida/odp/NNAJ.fna
+    minscafsize: 10000000
+  PCOS:
+    proteins: Annelida/odp/PCOS.faa
+    chrom: Annelida/odp/PCOS.chrom
+    genome: Annelida/odp/PCOS.fna
+    minscafsize: 10000000
+  SCAV:
+    proteins: Annelida/odp/SCAV.faa
+    chrom: Annelida/odp/SCAV.chrom
+    genome: Annelida/odp/SCAV.fna
+    minscafsize: 10000000

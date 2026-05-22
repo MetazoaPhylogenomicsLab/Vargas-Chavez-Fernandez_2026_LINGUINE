@@ -426,8 +426,38 @@ reconstruct_node <- function(ref_species, comp_species, comparison_type, parent_
   } else if (resolution_strategy == "keep") {
     message("Applying KEEP multimapping resolution: Preserving WGD/paralogy signals across multiple LGs.")
     # We do nothing to the lists! They remain exactly as the graph algorithm built them.
-  } else {
-    stop("CRITICAL ERROR: Unknown resolve_multimapped strategy in config. Use 'drop', 'random', or 'keep'.")
+  } else if (resolution_strategy == "consensus") {
+    message("Applying CONSENSUS multimapping resolution: Assigning duplicated OGs to their majority LG (Ties broken randomly).")
+
+    # 1. Unnest ONLY the genes safely
+    expanded_lgs <- ancestral_genome |>
+      dplyr::select(ancestral_lg_name, Ancestor_Full_Genes) |>
+      tidyr::unnest(Ancestor_Full_Genes) |>
+      dplyr::rename(gene_id = Ancestor_Full_Genes)
+
+    # 2. Map genes to OGs, count the weight, and resolve ties randomly
+    resolved_ogs <- expanded_lgs |>
+      dplyr::inner_join(orthogroups_df |> dplyr::select(gene_id, Orthogroup), by = "gene_id") |>
+      dplyr::group_by(Orthogroup, ancestral_lg_name) |>
+      dplyr::summarise(weight = dplyr::n(), .groups = "drop") |>
+      dplyr::group_by(Orthogroup) |>
+      # Grab the max weight, and explicitly KEEP any ties
+      dplyr::slice_max(order_by = weight, n = 1, with_ties = TRUE) |>
+      # Randomly pick exactly 1 from the remaining row(s)
+      dplyr::slice_sample(n = 1) |>
+      dplyr::ungroup() |>
+      dplyr::group_by(ancestral_lg_name) |>
+      dplyr::summarise(Resolved_OGs = list(Orthogroup), .groups = "drop")
+
+    # 3. Apply the resolved list back to the ancestral genome
+    ancestral_genome <- ancestral_genome |>
+      dplyr::left_join(resolved_ogs, by = "ancestral_lg_name") |>
+      dplyr::mutate(
+        Ancestor_Full_OGs = ifelse(purrr::map_lgl(Resolved_OGs, is.null), list(character(0)), Resolved_OGs)
+      ) |>
+      dplyr::select(-Resolved_OGs)
+    } else {
+    stop("CRITICAL ERROR: Unknown resolve_multimapped strategy in config. Use 'drop', 'random', 'keep' or 'consensus'.")
   }
 
   # C. Final Recalculation & Cleanup
