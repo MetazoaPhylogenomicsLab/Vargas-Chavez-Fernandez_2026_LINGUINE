@@ -39,7 +39,7 @@ run_synteny_hmm <- function(ref_species, comp_species, comparison_type, hmm_obs_
     stringr::str_replace_all("^ON_", "") |>
     unique() |> sort()
 
-  if (length(full_comp_chr_ids) == 0) stop("CRITICAL ERROR: Zero specific spatial signals isolated.")
+  if (length(full_comp_chr_ids) == 0) stop("Error: Zero specific spatial signals isolated.")
 
   # ----------------------------------------------------------------------------
   # 2. Matrix Assembly

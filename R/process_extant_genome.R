@@ -14,7 +14,7 @@ process_extant_genome <- function(species_name, is_inode = FALSE, config) {
 
   # 1. Validate the configuration object
   if (!inherits(config, "linguine_config")) {
-    stop("CRITICAL ERROR: The 'config' argument must be a valid linguine_config object.")
+    stop("Error: The 'config' argument must be a valid linguine_config object.")
   }
 
   # 2. Dynamically construct paths using the config object
@@ -33,7 +33,7 @@ process_extant_genome <- function(species_name, is_inode = FALSE, config) {
         min_length = config$min_chromosome_length_bp
       )
     } else {
-      stop("CRITICAL ERROR: Required FASTA file for ", species_name, " not found at ", fasta_path)
+      stop("Error: Required FASTA file for ", species_name, " not found at ", fasta_path)
     }
   }
 

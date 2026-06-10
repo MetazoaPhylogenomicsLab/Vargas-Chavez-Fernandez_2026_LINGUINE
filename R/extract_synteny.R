@@ -82,7 +82,7 @@ extract_synteny_architecture <- function(ref_species, comp_species, comparison_t
     syntenic_genes_df <- syntenic_genes_df |> dplyr::filter(stringr::str_detect(target_comp_chromosome, "^LG_"))
   }
 
-  if (nrow(syntenic_genes_df) == 0) stop("CRITICAL ERROR: Zero 'SYNTENIC_MATCH' validations identified.")
+  if (nrow(syntenic_genes_df) == 0) stop("Error: Zero 'SYNTENIC_MATCH' validations identified.")
 
   syntenic_blocks_prelim <- syntenic_genes_df |>
     dplyr::group_by(chromosome) |>
@@ -102,30 +102,48 @@ extract_synteny_architecture <- function(ref_species, comp_species, comparison_t
 
   # Coordinate Projections
   if (comparison_type == "tip_vs_tip") {
+    ortho_unnested_strict <- syntenic_blocks_prelim |>
+      dplyr::select(block_group_key, target_comp_chromosome, ref_gene_ids_in_block) |>
+      tidyr::unnest(ref_gene_ids_in_block) |>
+      dplyr::inner_join(original_ortholog_data, by = c("ref_gene_ids_in_block" = "ref_gene_id", "target_comp_chromosome" = "comp_chromosome"))
+      
+    ortho_agg_strict <- ortho_unnested_strict |>
+      dplyr::group_by(block_group_key) |>
+      dplyr::summarise(
+        comp_block_start = min(comp_start, na.rm = TRUE),
+        comp_block_end = max(comp_end, na.rm = TRUE),
+        comp_gene_ids_in_block = list(unique(comp_gene_id)),
+        .groups = "drop"
+      )
+      
     final_syntenic_blocks <- syntenic_blocks_prelim |>
-      dplyr::rowwise() |>
+      dplyr::left_join(ortho_agg_strict, by = "block_group_key") |>
+      dplyr::filter(!is.na(comp_block_start) & !is.na(comp_block_end)) |>
       dplyr::mutate(
-        relevant_orthologs = list(original_ortholog_data |> dplyr::filter(ref_gene_id %in% unlist(ref_gene_ids_in_block) & comp_chromosome == target_comp_chromosome)),
-        comp_block_start = if(nrow(relevant_orthologs) > 0) min(relevant_orthologs$comp_start, na.rm = TRUE) else NA_real_,
-        comp_block_end = if(nrow(relevant_orthologs) > 0) max(relevant_orthologs$comp_end, na.rm = TRUE) else NA_real_,
-        comp_gene_ids_in_block = list(unique(relevant_orthologs$comp_gene_id))
+        comp_gene_ids_in_block = lapply(comp_gene_ids_in_block, function(x) if(is.null(x)) character(0) else x)
       ) |>
-      dplyr::ungroup() |>
-      dplyr::select(-relevant_orthologs, -block_group_key) |>
-      dplyr::filter(!is.na(comp_block_start) & !is.na(comp_block_end))
+      dplyr::select(-block_group_key)
   } else {
+    ortho_unnested_node <- syntenic_blocks_prelim |>
+      dplyr::select(block_group_key, ref_gene_ids_in_block) |>
+      tidyr::unnest(ref_gene_ids_in_block) |>
+      dplyr::inner_join(original_ortholog_data, by = c("ref_gene_ids_in_block" = "ref_gene_id"))
+      
+    ortho_agg_node <- ortho_unnested_node |>
+      dplyr::group_by(block_group_key) |>
+      dplyr::summarise(
+        comp_block_start = min(ref_start, na.rm = TRUE),
+        comp_block_end = max(ref_end, na.rm = TRUE),
+        .groups = "drop"
+      )
+      
     final_syntenic_blocks <- syntenic_blocks_prelim |>
-      dplyr::rowwise() |>
+      dplyr::left_join(ortho_agg_node, by = "block_group_key") |>
+      dplyr::filter(!is.na(comp_block_start) & !is.na(comp_block_end)) |>
       dplyr::mutate(
-        relevant_orthologs = list(original_ortholog_data |> dplyr::filter(ref_gene_id %in% unlist(ref_gene_ids_in_block))),
-        has_comp_orthologs = nrow(relevant_orthologs) > 0,
-        comp_block_start = if(has_comp_orthologs) min(relevant_orthologs$ref_start, na.rm=TRUE) else NA_real_,
-        comp_block_end = if(has_comp_orthologs) max(relevant_orthologs$ref_end, na.rm=TRUE) else NA_real_,
         comp_gene_ids_in_block = list(character(0))
       ) |>
-      dplyr::ungroup() |>
-      dplyr::select(-relevant_orthologs, -block_group_key, -has_comp_orthologs) |>
-      dplyr::filter(!is.na(comp_block_start))
+      dplyr::select(-block_group_key)
   }
 
   saveRDS(final_syntenic_blocks, strict_blocks_path)
@@ -151,24 +169,47 @@ extract_synteny_architecture <- function(ref_species, comp_species, comparison_t
     dplyr::arrange(chromosome, broad_ref_start)
 
   if (comparison_type == "tip_vs_tip") {
+    # Fast spatial overlap using foverlaps wrapper
+    broad_coords_for_join <- broad_syntenic_regions_coords |>
+      dplyr::mutate(block_id = as.character(broad_block_key)) |>
+      dplyr::select(block_id, chromosome, block_start_pos = broad_ref_start, block_end_pos = broad_ref_end, inferred_state_blocks = target_comp_chromosome)
+    
+    mapped_genes <- map_blocks_to_genes(gene_obs, broad_coords_for_join)
+    
+    # Aggregate reference genes
+    ref_genes_agg <- mapped_genes |>
+      dplyr::filter(!is.na(block_id)) |>
+      dplyr::group_by(block_id, chromosome) |>
+      dplyr::summarise(broad_ref_gene_ids = list(unique(gene_id)), .groups = "drop")
+      
     broad_syntenic_regions <- broad_syntenic_regions_coords |>
+      dplyr::mutate(block_id = as.character(broad_block_key)) |>
+      dplyr::left_join(ref_genes_agg, by = c("block_id", "chromosome")) |>
+      dplyr::mutate(broad_ref_gene_ids = lapply(broad_ref_gene_ids, function(x) if(is.null(x)) character(0) else x))
+      
+    # Optimize ortholog mapping using unnest and join
+    ortho_unnested <- broad_syntenic_regions |>
+      dplyr::select(block_id, target_comp_chromosome, broad_ref_gene_ids) |>
+      tidyr::unnest(broad_ref_gene_ids) |>
+      dplyr::inner_join(original_ortholog_data, by = c("broad_ref_gene_ids" = "ref_gene_id", "target_comp_chromosome" = "comp_chromosome"))
+      
+    ortho_agg <- ortho_unnested |>
+      dplyr::group_by(block_id) |>
+      dplyr::summarise(
+        broad_comp_gene_ids = list(unique(comp_gene_id)),
+        broad_comp_start = min(comp_start, na.rm = TRUE),
+        broad_comp_end = max(comp_end, na.rm = TRUE),
+        .groups = "drop"
+      )
+      
+    broad_syntenic_regions <- broad_syntenic_regions |>
+      dplyr::left_join(ortho_agg, by = "block_id") |>
       dplyr::mutate(
-        broad_ref_gene_ids = purrr::pmap(list(chromosome, broad_ref_start, broad_ref_end), function(chr, start_bp, end_bp) {
-          gene_obs |>
-            dplyr::filter(chromosome == chr, (start >= start_bp & start <= end_bp) | (end >= start_bp & end <= end_bp) | (start <= start_bp & end >= end_bp)) |>
-            dplyr::pull(gene_id) |> unique()
-        }),
-        broad_comp_gene_ids = purrr::pmap(list(broad_ref_gene_ids, target_comp_chromosome), function(ref_genes, target_chr) {
-          if(length(ref_genes) == 0) return(character(0))
-          original_ortholog_data |> dplyr::filter(ref_gene_id %in% unlist(ref_genes), comp_chromosome == target_chr) |> dplyr::pull(comp_gene_id) |> unique()
-        })
+        broad_comp_gene_ids = lapply(broad_comp_gene_ids, function(x) if(is.null(x)) character(0) else x),
+        broad_comp_start = ifelse(is.na(broad_comp_start), NA_real_, broad_comp_start),
+        broad_comp_end = ifelse(is.na(broad_comp_end), NA_real_, broad_comp_end)
       ) |>
-      dplyr::rowwise() |>
-      dplyr::mutate(
-        broad_comp_start = if(length(broad_comp_gene_ids)>0) min(original_ortholog_data$comp_start[original_ortholog_data$comp_gene_id %in% unlist(broad_comp_gene_ids) & original_ortholog_data$comp_chromosome == target_comp_chromosome], na.rm=TRUE) else NA_real_,
-        broad_comp_end = if(length(broad_comp_gene_ids)>0) max(original_ortholog_data$comp_end[original_ortholog_data$comp_gene_id %in% unlist(broad_comp_gene_ids) & original_ortholog_data$comp_chromosome == target_comp_chromosome], na.rm=TRUE) else NA_real_
-      ) |>
-      dplyr::ungroup()
+      dplyr::select(-block_id)
   } else {
     broad_syntenic_regions <- broad_syntenic_regions_coords |>
       dplyr::mutate(

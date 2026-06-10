@@ -345,7 +345,7 @@ classify_chromosome_blocks <- function(chr_data, config) {
 }
 
 #' @title Spatially Map Blocks to Genes
-#' @description Attaches syntenic block classifications back to the individual gene models.
+#' @description Attaches syntenic block classifications back to the individual gene models using fast interval trees.
 #'
 #' @param genes_df tibble. The individual gene coordinates.
 #' @param blocks_df tibble. The consolidated structural blocks.
@@ -359,26 +359,27 @@ map_blocks_to_genes <- function(genes_df, blocks_df) {
     return(result_df)
   }
 
-  result_df <- genes_df |>
-    dplyr::rowwise() |>
-    dplyr::mutate(
-      overlapping_block = list(
-        blocks_df |>
-          dplyr::filter(
-            (start >= block_start_pos & start <= block_end_pos) |
-              (end >= block_start_pos & end <= block_end_pos) |
-              (start <= block_start_pos & end >= block_end_pos)
-          )
-      ),
-      inferred_state_blocks = if (nrow(overlapping_block) > 0) dplyr::first(overlapping_block$inferred_state_blocks) else NA_character_
-    )
+  genes_dt <- data.table::as.data.table(genes_df)
+  blocks_dt <- data.table::as.data.table(blocks_df)
 
-  if ("block_id" %in% names(blocks_df)) {
-    result_df <- result_df |>
-      dplyr::mutate(block_id = if(nrow(overlapping_block) > 0) dplyr::first(overlapping_block$block_id) else NA_character_)
+  # foverlaps requires integer coordinates and keys
+  blocks_dt[, `:=`(block_start_pos = as.integer(block_start_pos), block_end_pos = as.integer(block_end_pos))]
+  genes_dt[, `:=`(start = as.integer(start), end = as.integer(end))]
+  
+  data.table::setkey(blocks_dt, block_start_pos, block_end_pos)
+  
+  # perform overlap
+  overlaps <- data.table::foverlaps(genes_dt, blocks_dt, by.x = c("start", "end"), by.y = c("block_start_pos", "block_end_pos"), type = "any", mult = "first")
+  
+  genes_df <- genes_df |>
+    dplyr::mutate(inferred_state_blocks = overlaps$inferred_state_blocks)
+
+  if ("block_id" %in% names(blocks_dt)) {
+    genes_df <- genes_df |>
+      dplyr::mutate(block_id = overlaps$block_id)
   }
 
-  return(result_df |> dplyr::ungroup() |> dplyr::select(-overlapping_block))
+  return(genes_df)
 }
 
 #' @title Synthesize Broad Ancestral Regions
@@ -692,7 +693,7 @@ collapse_lg_pairs <- function(broad_regions, pairs_to_collapse) {
     to_collapse_df <- as.data.frame(to_collapse)
     joined_df <- merge(to_collapse_df, cluster_map, by.x = "linkage_group_name", by.y = "old_lg")
 
-    if(!"new_lg" %in% names(joined_df)) stop("Critical Error: Core mapping lost during structural join.")
+    if(!"new_lg" %in% names(joined_df)) stop("Error: Core mapping lost during structural join.")
 
     split_data <- split(joined_df, joined_df$new_lg)
 

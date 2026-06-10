@@ -27,7 +27,7 @@ reconstruct_node <- function(ref_species, comp_species, comparison_type, parent_
 
     if (file.exists(p1)) return(p1)
     if (file.exists(p2)) return(p2)
-    stop("CRITICAL ERROR: Could not find ancestral genome file for node: ", node_name)
+    stop("Error: Could not find ancestral genome file for node: ", node_name)
   }
 
   # ----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ reconstruct_node <- function(ref_species, comp_species, comparison_type, parent_
         if (parent_node == "N0") {
           hog_col_name <- "Orthogroup"
         } else {
-          stop(paste("CRITICAL ERROR: Column", hog_col_name, "is missing from the OrthoFinder data."))
+          stop(paste("Error: Column", hog_col_name, "is missing from the OrthoFinder data."))
         }
       }
 
@@ -80,7 +80,7 @@ reconstruct_node <- function(ref_species, comp_species, comparison_type, parent_
     if (parent_node == "N0") {
       id_col_name <- "Orthogroup"
     } else {
-      stop(paste("CRITICAL ERROR: Column", id_col_name, "is missing from the OrthoFinder data."))
+      stop(paste("Error: Column", id_col_name, "is missing from the OrthoFinder data."))
     }
   }
 
@@ -128,7 +128,7 @@ reconstruct_node <- function(ref_species, comp_species, comparison_type, parent_
     message(sprintf("  -> Blocks involved in duplication: %d (%.1f%%)", blocks_in_dups_A, perc_A))
     message(sprintf("  -> Total blocks after paralog collapse: %d", nrow(collapsed_lg_A)))
     if (perc_A >= 60) {
-      message(sprintf("  *** HIGH PARALOGY DETECTED: The massive duplication signal (%.1f%% of blocks) strongly suggests the %s lineage underwent a Whole Genome Duplication (WGD). ***", perc_A, ref_species))
+      message(sprintf("  *** High paralogy detected: The duplication signal (%.1f%% of blocks) suggests the %s lineage may have undergone a Whole Genome Duplication (WGD). ***", perc_A, ref_species))
     }
   }
 
@@ -140,7 +140,7 @@ reconstruct_node <- function(ref_species, comp_species, comparison_type, parent_
     message(sprintf("  -> Blocks involved in duplication: %d (%.1f%%)", blocks_in_dups_B, perc_B))
     message(sprintf("  -> Total blocks after paralog collapse: %d", nrow(collapsed_lg_B)))
     if (perc_B >= 60) {
-      message(sprintf("  *** HIGH PARALOGY DETECTED: The massive duplication signal (%.1f%% of blocks) strongly suggests the %s lineage underwent a Whole Genome Duplication (WGD). ***", perc_B, comp_species))
+      message(sprintf("  *** High paralogy detected: The duplication signal (%.1f%% of blocks) suggests the %s lineage may have undergone a Whole Genome Duplication (WGD). ***", perc_B, comp_species))
     }
   }
   # -----------------------------------------
@@ -457,7 +457,7 @@ reconstruct_node <- function(ref_species, comp_species, comparison_type, parent_
       ) |>
       dplyr::select(-Resolved_OGs)
     } else {
-    stop("CRITICAL ERROR: Unknown resolve_multimapped strategy in config. Use 'drop', 'random', 'keep' or 'consensus'.")
+    stop("Error: Unknown resolve_multimapped strategy in config. Use 'drop', 'random', 'keep' or 'consensus'.")
   }
 
   # C. Final Recalculation & Cleanup

@@ -17,7 +17,7 @@ plot_architecture <- function(ref_species, comp_species, comparison_type, parent
   message("\n--- Generating Matrix Topologies & Displays ---")
 
   anc_file <- file.path(config$paths$results, paste0("ancestral_genome_", ref_species, "_", comp_species, ".rds"))
-  if (!file.exists(anc_file)) stop("CRITICAL ERROR: Ancestral model missing: ", anc_file)
+  if (!file.exists(anc_file)) stop("Error: Ancestral model missing: ", anc_file)
   ancestral_genome <- readRDS(anc_file)
 
   # Centralized Orthology Dictionary
@@ -49,7 +49,7 @@ plot_architecture <- function(ref_species, comp_species, comparison_type, parent
     }
     fb <- file.path(config$paths$results, paste0("ancestral_genome_", node_name, ".rds"))
     if(file.exists(fb)) return(fb)
-    stop("CRITICAL ERROR: Could not locate raw ancestral file for node: ", node_name)
+    stop("Error: Could not locate raw ancestral file for node: ", node_name)
   }
 
   # ==============================================================================

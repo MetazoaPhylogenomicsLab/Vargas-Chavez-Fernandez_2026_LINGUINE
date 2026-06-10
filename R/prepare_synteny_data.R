@@ -27,12 +27,12 @@ prepare_synteny_data <- function(ref_species, comp_species, comparison_type, par
   # 1. Load Extant Gene Coordinates
   # ==============================================================================
   ref_genes_df_path <- file.path(config$paths$processed_data, paste0(ref_species, "_genes_df.rds"))
-  if (!file.exists(ref_genes_df_path)) stop("CRITICAL ERROR: Gene mapping missing for ", ref_species)
+  if (!file.exists(ref_genes_df_path)) stop("Error: Gene mapping missing for ", ref_species)
   ref_genes_raw <- readRDS(ref_genes_df_path)
 
   if (comparison_type == "tip_vs_tip") {
     comp_genes_df_path <- file.path(config$paths$processed_data, paste0(comp_species, "_genes_df.rds"))
-    if (!file.exists(comp_genes_df_path)) stop("CRITICAL ERROR: Gene mapping missing for ", comp_species)
+    if (!file.exists(comp_genes_df_path)) stop("Error: Gene mapping missing for ", comp_species)
     comp_genes_raw <- readRDS(comp_genes_df_path)
   }
 
@@ -97,7 +97,7 @@ prepare_synteny_data <- function(ref_species, comp_species, comparison_type, par
     } else {
       id_col_name <- paste0("HOG_", parent_node)
       if (!id_col_name %in% colnames(orthogroups_final)) {
-        if (parent_node == "N0") id_col_name <- "Orthogroup" else stop("CRITICAL ERROR: Column ", id_col_name, " is missing.")
+        if (parent_node == "N0") id_col_name <- "Orthogroup" else stop("Error: Column ", id_col_name, " is missing.")
       }
     }
 
@@ -122,7 +122,7 @@ prepare_synteny_data <- function(ref_species, comp_species, comparison_type, par
         dplyr::inner_join(ref_genes_raw |> dplyr::select(ref_gene_id = gene_id, ref_chromosome = chromosome, ref_start = start, ref_end = end), by = "ref_gene_id")
     }
 
-    if (nrow(ortholog_data_filtered) == 0) stop("CRITICAL ERROR: No viable ortholog pairs remained post-spatial mapping.")
+    if (nrow(ortholog_data_filtered) == 0) stop("Error: No viable ortholog pairs remained post-spatial mapping.")
     saveRDS(ortholog_data_filtered, file = ortholog_data_filtered_path)
   } else {
     ortholog_data_filtered <- readRDS(ortholog_data_filtered_path)
@@ -139,6 +139,25 @@ prepare_synteny_data <- function(ref_species, comp_species, comparison_type, par
 
   message("Computing Structural HMM Emission Sequences...")
 
+  # Filter out unplaced/small scaffolds before HMM
+  min_genes <- if(is.null(config$thresholds$min_genes_per_scaffold)) 10 else config$thresholds$min_genes_per_scaffold
+  
+  valid_chroms <- ref_genes_raw |>
+    dplyr::count(chromosome) |>
+    dplyr::filter(n >= min_genes) |>
+    dplyr::pull(chromosome)
+    
+  unplaced_genes <- ref_genes_raw |>
+    dplyr::filter(!chromosome %in% valid_chroms)
+    
+  ref_genes_filtered <- ref_genes_raw |>
+    dplyr::filter(chromosome %in% valid_chroms)
+
+  unplaced_path <- file.path(config$paths$intermediate_data, paste0("unplaced_scaffolds_", ref_species, "_ref_", comp_species, "_comp.rds"))
+  saveRDS(unplaced_genes, unplaced_path)
+
+  message(sprintf("Filtering small scaffolds (< %d genes): Kept %d valid chromosomes. Saved %d unplaced genes for post-hoc assignment.", min_genes, length(valid_chroms), nrow(unplaced_genes)))
+
   if (comparison_type == "tip_vs_tip") {
     gene_comp_chroms <- ortholog_data_filtered |>
       dplyr::group_by(ref_gene_id) |>
@@ -150,7 +169,7 @@ prepare_synteny_data <- function(ref_species, comp_species, comparison_type, par
       dplyr::group_by(ref_gene_id) |>
       dplyr::summarise(num_ortholog_hits = dplyr::n(), all_comp_chromosomes = list(unique(comp_chromosome)), Orthogroup = unique(OG_ID), .groups = 'drop')
 
-    hmm_observation_df <- ref_genes_raw |>
+    hmm_observation_df <- ref_genes_filtered |>
       dplyr::left_join(gene_comp_chroms, by = c("gene_id" = "ref_gene_id")) |>
       dplyr::mutate(temp_observation = NA_character_) |>
       dplyr::left_join(gene_ortholog_summary, by = c("gene_id" = "ref_gene_id")) |>
@@ -174,7 +193,7 @@ prepare_synteny_data <- function(ref_species, comp_species, comparison_type, par
     anc_A_file <- file.path(config$paths$results, paste0("ancestral_genome_", comp_node_daughters[1], "_", comp_node_daughters[2], ".rds"))
     anc_B_file <- file.path(config$paths$results, paste0("ancestral_genome_", comp_node_daughters[2], "_", comp_node_daughters[1], ".rds"))
     ancestral_genome_path <- if(file.exists(anc_A_file)) anc_A_file else anc_B_file
-    if (!file.exists(ancestral_genome_path)) stop("CRITICAL ERROR: Ancestral genome mapping missing for structural evaluation.")
+    if (!file.exists(ancestral_genome_path)) stop("Error: Ancestral genome mapping missing for structural evaluation.")
 
     ancestral_genome_df <- readRDS(ancestral_genome_path)
 
@@ -198,7 +217,7 @@ prepare_synteny_data <- function(ref_species, comp_species, comparison_type, par
 
     tip_gene_og_map <- ortholog_data_filtered |> dplyr::select(gene_id = ref_gene_id, Orthogroup = OG_ID) |> dplyr::distinct()
 
-    hmm_observation_df <- ref_genes_raw |>
+    hmm_observation_df <- ref_genes_filtered |>
       dplyr::left_join(tip_gene_og_map, by = "gene_id") |>
       dplyr::left_join(inode_og_map_lookup, by = "Orthogroup") |>
       dplyr::mutate(

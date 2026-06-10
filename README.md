@@ -25,15 +25,46 @@ If your genome annotation pipeline appends suffixes (e.g., `-PA`, `_t1`) to tran
 
 ## 🛠 Installation
 
-You can install the development version of LINGUINE from GitHub using `devtools`:
+You can seamlessly install LINGUINE and all its dependencies (including C++ libraries) directly from GitHub using the modern `pak` package manager:
 
 ```r
+# If you don't have pak installed:
 # install.packages("pak")
-pak::pak("MetazoaPhylogenomicsLab/Vargas-Chavez-Fernandez_2026_LINGUINE")
+
+pak::pkg_install("MetazoaPhylogenomicsLab/Vargas-Chavez-Fernandez_2026_LINGUINE")
+```
+
+## 📁 Expected Directory Structure
+Before running LINGUINE, ensure your `base_dir` contains a `raw_data` folder structured as follows. **Crucially, your `.fna` and `.gff`/`.gff3` files MUST be named exactly as the tip labels in your phylogenetic tree.**
+
+```text
+your_base_dir/
+└── raw_data/
+    ├── SpeciesTree_rooted.txt           # Your Newick tree
+    ├── Phylogenetic_Hierarchical_Orthogroups/ # OrthoFinder output
+    │   └── N0.tsv                       # (Or Orthogroups.tsv if using standard OGs)
+    ├── Species_A.fna                    # Genome FASTA for tip "Species_A"
+    ├── Species_A.gff                    # Genome Annotation for tip "Species_A"
+    ├── Species_B.fna                    
+    └── Species_B.gff                    
 ```
 
 ## 🚀 Quick Start & Configuration
 
+### Pre-processing: Auto-Standardize Your GFFs
+LINGUINE requires strictly formatted GFF3 files where the `attributes` column uses `ID=`. If your genome annotations are messy (using `Name=`, `gene_id=`, or `locus_tag=`), you can use our built-in standardizer before running the pipeline:
+
+```r
+library(LINGUINE)
+
+# Point this to the folder containing your messy .gff or .gff3 files
+standardize_linguine_inputs(
+  input_dir = "/path/to/raw_gffs", 
+  output_dir = "/path/to/your/working/directory/raw_data/gffs"
+)
+```
+
+### Running the Pipeline
 LINGUINE is operated entirely through a centralized configuration object. This ensures your runs are highly reproducible.
 
 ```r
@@ -47,10 +78,13 @@ config <- create_linguine_config(
   orthology_type = "HOGs",
   orthology_filename = "Phylogenetic_Hierarchical_Orthogroups",
   min_chromosome_length_bp = 4500000, 
-  resolve_multimapped = "drop" 
+  resolve_multimapped = "drop",
+  num_cores = 4 # Enable safe parallel processing
 )
 
 # 2. Execute the entire pipeline
+# (This automatically runs pre-flight checks, generates the HMM blocks, 
+# and produces final interactive plots and TSV/BED exports)
 run_linguine(config)
 ```
 
@@ -63,8 +97,9 @@ The `create_linguine_config()` function accepts several arguments to tune the pi
 | `base_dir` | *String* | Absolute path to the working directory containing your `raw_data` folder. |
 | `tree_filename` | *String* | Name of your Newick species tree file (must be inside `raw_data`). |
 | `orthology_type` | *String* | Either `"OGs"` for standard Orthogroups or `"HOGs"` for Hierarchical. |
-| `orthology_filename` | *String* | The OrthoFinder output file (e.g., `"Orthogroups.tsv"` or the directory name containing HOG `.tsv` files). |
+| `orthology_filename` | *String* | The OrthoFinder output file (eg., `"Orthogroups.tsv"` or the directory name containing HOG `.tsv` files). |
 | `min_chromosome_length_bp`| *Numeric* | Drops physical scaffolds smaller than this threshold (in base pairs) to remove assembly noise. |
+| `num_cores` | *Numeric* | Number of CPU cores to use for safe parallel tree traversal. Defaults to `1`. |
 | `resolve_multimapped` | *String* | Paralogy strategy: `"drop"` (enforces strict 1-to-1 synteny), `"keep"` (preserves paralogy for WGD hunting), or `"random"` (preserves density without inflation). |
 | `min_lg_fraction` | *Numeric* | The minimum fraction of total mapped orthogroups a reconstructed Linkage Group must contain to be retained (e.g., `0.01` for 1%). |
 | `purity_threshold` | *Numeric* | Synteny HMM parameter. The minimum fractional purity (0.0 to 1.0) required to confidently classify a contiguous block. Default is `0.80`. |
@@ -74,10 +109,12 @@ The `create_linguine_config()` function accepts several arguments to tune the pi
 
 ## 📊 Pipeline Outputs
 All outputs are automatically sorted into the directory defined in your `base_dir`:
-* `processed_data/`: Sanitized gene coordinates, filtered chromosome sizes, and centralized orthology dictionaries.
-* `intermediate_data/`: HMM emission matrices and Viterbi state classifications.
-* `results/`: The finalized `.rds` objects for the Ancestral Genomes at every internal node.
-* `plots/`: High-resolution PNGs and SVGs of phylogenetic trees, Oxford Grids, and physical karyotypes.
+* `processed_data/`: Sanitized gene coordinates, filtered chromosome sizes, centralized orthology dictionaries, and unplaced scaffold "dust" exclusions.
+* `intermediate_data/`: HMM emission matrices and fast Viterbi/interval-tree syntenic classifications.
+* `results/`: 
+  * The finalized `.rds` objects for the Ancestral Genomes at every internal node.
+  * Extracted `.tsv` and `.bed` files mapping the exact gene block order of the final root ancestor, ready for external visualization tools (e.g., SynVisio).
+* `plots/`: High-resolution PNGs and SVGs of phylogenetic trees, Oxford Grids, and the final consolidated Evolutionary Architecture Summary (incorporating outgroup signal strengths and WGD fusions).
 
 ## 📖 Citation
 If you use LINGUINE in your research, please cite:

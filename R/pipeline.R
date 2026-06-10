@@ -11,8 +11,20 @@
 run_linguine <- function(config) {
 
   message("=======================================================")
-  message("          INITIALIZING LINGUINE PIPELINE               ")
+  message("          Initializing LINGUINE Pipeline               ")
   message("=======================================================")
+
+  # Safe Parallel Setup
+  requested_cores <- if (!is.null(config$num_cores)) config$num_cores else 1
+  if (requested_cores > 1 && requireNamespace("future", quietly = TRUE)) {
+    max_available <- future::availableCores()
+    cores_to_use <- min(requested_cores, max_available)
+    message(sprintf("Enabling parallel processing: Using %d cores.", cores_to_use))
+    future::plan(future::multisession, workers = cores_to_use)
+  } else {
+    message("Running sequentially (1 core).")
+    if (requireNamespace("future", quietly = TRUE)) future::plan(future::sequential)
+  }
 
   # 1. Setup Directories
   purrr::walk(config$paths, ~if (!dir.exists(.x)) dir.create(.x, recursive = TRUE))
@@ -20,7 +32,7 @@ run_linguine <- function(config) {
   # 2. Parse Phylogenetic Tree
   message("\nReading and processing phylogenetic tree...")
   tree_path <- file.path(config$paths$raw_data, config$tree_filename)
-  if (!file.exists(tree_path)) stop("CRITICAL ERROR: Tree file not found at: ", tree_path)
+  if (!file.exists(tree_path)) stop("Error: Tree file not found at: ", tree_path)
 
   speciesTree <- phytools::read.newick(tree_path)
   if(is.null(speciesTree$node.label)) speciesTree <- ape::reorder.phylo(speciesTree, order = "postorder")
@@ -43,6 +55,9 @@ run_linguine <- function(config) {
   }
 
   if(is.null(speciesTree$node.label)) speciesTree$node.label <- rev(names(internal_node_daughters))
+
+  # 3. Pre-Flight Checks
+  run_preflight_checks(config, speciesTree)
 
   # ----------------------------------------------------------------------------
   # Tree Visualization
@@ -108,8 +123,28 @@ run_linguine <- function(config) {
   }
 
   message("\n=======================================================")
-  message("         LINGUINE PIPELINE COMPLETE                    ")
-  message("=======================================================")
+  message("          LINGUINE Pipeline Complete                   ")
+  message("=======================================================\n")
+
+  # Generate the final post-processing plot using the root node
+  root_node <- unique(internal_nodes)[length(internal_nodes)]
+  daughters <- internal_node_daughters[[root_node]]
+
+  if (length(daughters) == 2) {
+    message("Generating final evolutionary architecture summary plot...")
+    generate_evolutionary_summary(
+      root_node = root_node,
+      node_daughters = daughters,
+      config = config,
+      speciesTree = speciesTree
+    )
+    
+    export_ancestral_genome(
+      root_node = root_node,
+      node_daughters = daughters,
+      config = config
+    )
+  }
 
   return(invisible(NULL))
 }

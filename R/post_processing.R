@@ -123,7 +123,7 @@ plot_rideogram_exact <- function(species_order, processed_dir, ancestral_rds_pat
     message("Plot Resolution: Keeping all multi-mappings (Note: conflicting translocations will not draw ribbons).")
     # Do nothing, leave the data exactly as it is.
   } else {
-    stop("CRITICAL ERROR: Unknown resolve_plot_multimapping strategy. Use 'random', 'drop', or 'keep'.")
+    stop("Error: Unknown resolve_plot_multimapping strategy. Use 'random', 'drop', or 'keep'.")
   }
   # =======================================================================
 
@@ -244,38 +244,51 @@ plot_rideogram_exact <- function(species_order, processed_dir, ancestral_rds_pat
 }
 
 
-# 1. Define your 3 species in order
-species_to_plot <- c("SCAV", "HMAN", "PCOS", "BLOB", "DELA", "NNAJ", "EAND", "MVUL")
-
-# 2. Define the exact paths to your data
-processed_dir <- "~/Documents/GitHub/getLinkageGroups/runs/Annelida_Rpackage_min_chr_size_5000000bp/processed_data/"
-rds_file <- "~/Documents/GitHub/getLinkageGroups/runs/Annelida_Rpackage_min_chr_size_5000000bp/results/ancestral_genome_N1_N2.rds"
-ortho_file <- "~/Documents/GitHub/getLinkageGroups/runs/Annelida_Rpackage_min_chr_size_5000000bp/processed_data/ortholog_data_HOGs.rds"
-
-# 3. Launch the function!
-plot_rideogram_exact(
-  species_order = species_to_plot,
-  processed_dir = processed_dir,
-  ancestral_rds_path = rds_file,
-  ortholog_rds_path = ortho_file,
-  id_col_name = "Orthogroup",
-  output_filename = "Perfect_Ternary_RIdeogram.svg"
-)
-
-# 1. Define your 3 species in order
-species_to_plot <- c("HCON", "OTIP", "CBRI", "CNIO", "CREM", "CELE", "CINO", "PEXS", "PRPA", "BOKI", "SRAT")
-
-# 2. Define the exact paths to your data
-processed_dir <- "~/Documents/GitHub/getLinkageGroups/runs/Nematoda_Rpackage_min_chr_size_4500000bp/processed_data/"
-rds_file <- "~/Documents/GitHub/getLinkageGroups/runs/Nematoda_Rpackage_min_chr_size_4500000bp/results/ancestral_genome_N3_N4.rds"
-ortho_file <- "~/Documents/GitHub/getLinkageGroups/runs/Nematoda_Rpackage_min_chr_size_4500000bp/processed_data/ortholog_data_HOGs.rds"
-
-# 3. Launch the function!
-plot_rideogram_exact(
-  species_order = species_to_plot,
-  processed_dir = processed_dir,
-  ancestral_rds_path = rds_file,
-  ortholog_rds_path = ortho_file,
-  id_col_name = "HOG_N1",
-  output_filename = "Nematoda_RIdeogram.svg"
-)
+#' @title Generate Final Evolutionary Summary Plot
+#' @description Wraps the plot_rideogram_exact function to be called dynamically at the end of the pipeline.
+#'
+#' @param root_node character. The ID of the root node of the species tree.
+#' @param node_daughters character vector. The two daughters of the root node.
+#' @param config list. The LINGUINE configuration list.
+#' @param speciesTree phylo. The ape species tree.
+#' @return NULL. Saves the plot to the results directory.
+#' @export
+generate_evolutionary_summary <- function(root_node, node_daughters, config, speciesTree) {
+  # Infer species plotting order (post-order traversal tips)
+  species_order <- speciesTree$tip.label
+  
+  processed_dir <- config$paths$processed
+  results_dir <- config$paths$results
+  
+  # The final ancestral object is named based on the two root daughters
+  rds_file <- file.path(results_dir, paste0("ancestral_genome_", node_daughters[1], "_", node_daughters[2], ".rds"))
+  if (!file.exists(rds_file)) {
+    rds_file <- file.path(results_dir, paste0("ancestral_genome_", node_daughters[2], "_", node_daughters[1], ".rds"))
+  }
+  
+  if (!file.exists(rds_file)) {
+    message("Warning: Could not locate the root ancestral genome. Skipping final evolutionary summary plot.")
+    return(invisible(NULL))
+  }
+  
+  ortho_file <- file.path(processed_dir, "ortholog_data_HOGs.rds")
+  if (!file.exists(ortho_file)) ortho_file <- file.path(processed_dir, "ortholog_data_OGs.rds")
+  
+  # Check if ortho files exist, try generic if neither
+  if(!file.exists(ortho_file)) ortho_file <- file.path(processed_dir, "ortholog_data.rds")
+  
+  id_col <- ifelse(config$orthologs$use_hogs, "HOG", "Orthogroup")
+  
+  output_filename <- file.path(results_dir, "Evolutionary_Architecture_Summary.svg")
+  
+  message(sprintf("Found root ancestral state (%s). Compiling final summary plot...", basename(rds_file)))
+  
+  plot_rideogram_exact(
+    species_order = species_order,
+    processed_dir = processed_dir,
+    ancestral_rds_path = rds_file,
+    ortholog_rds_path = ortho_file,
+    id_col_name = id_col,
+    output_filename = output_filename
+  )
+}
