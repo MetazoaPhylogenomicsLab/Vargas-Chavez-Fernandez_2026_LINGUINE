@@ -1,7 +1,7 @@
 # LINGUINE <img src="man/figures/logo.png" align="left" height="130" />
 **LINkage GroUps INfErence**
 
-[![R CMD Check](https://github.com/cvargas88/LINGUINE/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/cvargas88/LINGUINE/actions)
+[![R CMD Check](https://github.com/MetazoaPhylogenomicsLab/Vargas-Chavez-Fernandez_2026_LINGUINE/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/MetazoaPhylogenomicsLab/Vargas-Chavez-Fernandez_2026_LINGUINE/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Reconstructing the chromosomal architecture of ancestral genomes is a central challenge in comparative genomics. Existing methods struggle with rapid genome evolution, extensive chromosomal rearrangements, and whole-genome duplications (WGDs) followed by gene loss. 
@@ -118,4 +118,4 @@ All outputs are automatically sorted into the directory defined in your `base_di
 
 ## 📖 Citation
 If you use LINGUINE in your research, please cite:
-> Vargas-Chávez, C., & Fernández, R. (202X). *[Paper Title]*. [Journal Name]. [DOI]
+> Vargas-Chávez, C., & Fernández, R. (2026). *LINGUINE: a phylogeny-aware, orthogroup-based framework for robust ancestral linkage group inference*. bioRxiv. https://doi.org/10.64898/2026.05.26.727789
