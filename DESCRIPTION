@@ -36,8 +36,7 @@ Imports:
     grDevices,
     stats,
     gtools,
-    future,
-    cli
+    future
 Suggests: 
     RIdeogram,
     rsvg
