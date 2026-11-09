@@ -10,7 +10,7 @@ Reconstructing the chromosomal architecture of ancestral genomes is a central ch
 
 Crucially, LINGUINE is highly flexible regarding its orthology inputs. It natively ingests outputs from **OrthoFinder**, allowing users to run the pipeline using either standard flat Orthogroups (`Orthogroups.tsv`) or high-resolution Hierarchical Orthogroups (`HOGs`). 
 
-## ⚙️ Pipeline Overview
+## Pipeline Overview
 LINGUINE reconstructs ancestral states via an iterative post-order traversal of your species tree. For every internal node, the pipeline executes the following sequence:
 
 1. **Genomic Pre-Processing:** Parses FASTA and GFF files, dynamically filtering out fragmented micro-scaffolds based on user-defined length thresholds.
@@ -19,7 +19,7 @@ LINGUINE reconstructs ancestral states via an iterative post-order traversal of 
 4. **Bipartite Graph Reconstruction:** Projects syntenic blocks into a bipartite graph, utilizing an outgroup to polarize "FUSE" vs "SPLIT" chromosomal fusion events.
 5. **Paralogy Resolution:** Explicitly tests for statistically significant paralogy enrichments, collapsing duplicated linkage groups arising from WGDs prior to ancestral finalization to prevent karyotype inflation.
 
-## ⚠️ Critical Data Requirement
+## Critical Data Requirement
 **Your GFF feature IDs must perfectly match your OrthoFinder sequence IDs!**
 If your genome annotation pipeline appends suffixes (e.g., `-PA`, `_t1`) to transcripts, but your OrthoFinder dictionary lacks them, LINGUINE will fail to bridge the physical coordinates with the evolutionary orthology. Ensure your GFF `ID=` attributes and OrthoFinder `.tsv` gene names are strictly harmonized before running the pipeline.
 
@@ -34,7 +34,7 @@ You can seamlessly install LINGUINE and all its dependencies (including C++ libr
 pak::pkg_install("MetazoaPhylogenomicsLab/Vargas-Chavez-Fernandez_2026_LINGUINE")
 ```
 
-## 📁 Expected Directory Structure
+## Expected Directory Structure
 Before running LINGUINE, ensure your `base_dir` contains a `raw_data` folder structured as follows. **Crucially, your `.fna` and `.gff`/`.gff3` files MUST be named exactly as the tip labels in your phylogenetic tree.**
 
 ```text
@@ -49,7 +49,7 @@ your_base_dir/
     └── Species_B.gff                    
 ```
 
-## 🚀 Quick Start & Configuration
+## Quick Start & Configuration
 
 ### Pre-processing: Auto-Standardize Your GFFs
 LINGUINE requires strictly formatted GFF3 files where the `attributes` column uses `ID=`. If your genome annotations are messy (using `Name=`, `gene_id=`, or `locus_tag=`), you can use our built-in standardizer before running the pipeline:
@@ -107,7 +107,16 @@ The `create_linguine_config()` function accepts several arguments to tune the pi
 
 *(Note: Advanced HMM transition and emission probabilities can also be customized. Run `?create_linguine_config` in R for the full parameter list).*
 
-## 📊 Pipeline Outputs
+### Scenario-Specific Recommendations
+
+| Biological Scenario | Priority Parameters to Adjust │ Recommended Settings │ Expected Impact on Results |
+| :--- | :--- | :--- | :--- |
+| 1. Fragmented / Low-Quality Assemblies (Contig- or scaffold-level genomes) │ `min_chromosome_length_bp`, `min_lg_fraction` │ Increase to assembly N50/N90. Increase to 0.02 – 0.05 (2 – 5%) │ Filters out thousands of unplaced micro-scaffolds from polluting the bipartite graph; prevents short, unanchored contigs from generating spurious singleton pseudo-ALGs while retaining major chromosomal backbones. │
+| 2. High Gene Duplication / Multigene Families (Abundant duplicates) │ `resolve_multimapped`, `fisher_odds_lgs` │ Set to "drop". Increase to 6.0 – 10.0 │ Setting `resolve_multimapped` = "drop" removes multi-copy markers that create false bridging edges between distinct linkage groups; higher odds ratios ensure that graph clustering requires dense, unequivocal syntenic backbones. |
+| 3. Rapid Chromosomal Evolution / Extensive Rearrangements (Frequent fusions, fissions, translocations) │ `prob_self_syn_hmm1`, `fisher_p_lgs`, `fisher_odds_lgs` │ Decrease to 0.90 – 0.95. Relax to 1 × 10⁻¹⁰. Relax to 2.0 – 3.0. │ Lowering HMM transition inertia allows Viterbi decoding to switch states across smaller, rearranged syntenic segments without over-smoothing; relaxing graph thresholds prevents artificial over-fragmentation when shared markers are sparse. |
+| 4. Polyploidy & Whole-Genome Duplication (WGD) (Paleopolyploids, homeologous sets) │ `resolve_multimapped`, `paralogy_p` │ Set to "keep". Set to 1 × 10⁻²⁰ - 1 × 10⁻¹⁰. │ Preserves duplicated chromosomal copies for intra-specific syntenic evaluation; adjusting `paralogy_p` accommodates homeologs that have undergone asymmetric gene loss, merging them back into pre-duplication units (N). │ 
+
+## Pipeline Outputs
 All outputs are automatically sorted into the directory defined in your `base_dir`:
 * `processed_data/`: Sanitized gene coordinates, filtered chromosome sizes, centralized orthology dictionaries, and unplaced scaffold "dust" exclusions.
 * `intermediate_data/`: HMM emission matrices and fast Viterbi/interval-tree syntenic classifications.
@@ -116,6 +125,6 @@ All outputs are automatically sorted into the directory defined in your `base_di
   * Extracted `.tsv` and `.bed` files mapping the exact gene block order of the final root ancestor, ready for external visualization tools (e.g., SynVisio).
 * `plots/`: High-resolution PNGs and SVGs of phylogenetic trees, Oxford Grids, and the final consolidated Evolutionary Architecture Summary (incorporating outgroup signal strengths and WGD fusions).
 
-## 📖 Citation
+## Citation
 If you use LINGUINE in your research, please cite:
 > Vargas-Chávez, C., & Fernández, R. (2026). *LINGUINE: a phylogeny-aware, orthogroup-based framework for robust ancestral linkage group inference*. bioRxiv. https://doi.org/10.64898/2026.05.26.727789
